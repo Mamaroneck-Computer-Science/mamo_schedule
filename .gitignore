@@ -1,7 +1,7 @@
 # Flutter/Dart/Pub related
 **/doc/api/
 # Dependencies
-**/build/
+
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
