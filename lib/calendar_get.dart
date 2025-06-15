@@ -35,10 +35,11 @@ void main() async {
         condenseCal.containsKey(ma[1])) {
       String school = ma[1]!;
       String date = entry['dtstart']?['dt'] ?? '';
+      String dt_date = DateTime.parse(date).toIso8601String();
       String dayType = ma[2]!;
-      condenseCal[school]![date] = dayType;
+      condenseCal[school]![dt_date] = dayType;
     }
   }
 
-  print(condenseCal['MHS']);
+  // print(condenseCal['MHS']);
 }
