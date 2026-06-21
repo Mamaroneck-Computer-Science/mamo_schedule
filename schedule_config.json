@@ -1,5 +1,5 @@
 {
-    "calendar-link" : "https://www.mamkschools.org/cf_calendar/feed.cfm?type=ical&feedID=816A4F51E2B9463196235942E2F3C372",
+    "calendar_link" : "https://www.mamkschools.org/cf_calendar/feed.cfm?type=ical&feedID=816A4F51E2B9463196235942E2F3C372",
     "period_config" : {
         "1" : {"class" : true, "show" : true},
         "2" : {"class" : true, "show" : true},
