@@ -46,3 +46,7 @@ List<Period> getDaySchedule(String school, String dayType, DateTime date) {
     Period(11, '8', baseTime.add(Duration(minutes: 350)), 55, true, true),
   ];
 }
+
+List<String> getSchools() {
+  return ['MHS', 'HMX', 'ELEM'];
+}

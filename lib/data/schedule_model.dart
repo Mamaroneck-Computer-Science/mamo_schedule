@@ -36,10 +36,11 @@ class ScheduleModel extends ChangeNotifier {
       print('no schedule');
     } else {
       // We don't want to re-run all of this code, every time.
-      this.school = getSchool(scheduleProfileName);
+      final data = await getSchoolSchedule(scheduleProfileName);
+      this.school = data.$1;
+      this.studentSchedule = data.$2;
       this.dayType = '1'; //await getDayType(school, this.day);
       this.daySchedule = getDaySchedule(school, dayType, this.day);
-      this.studentSchedule = getStudentSchedule(scheduleProfileName);
 
       refreshSchedule();
     }
