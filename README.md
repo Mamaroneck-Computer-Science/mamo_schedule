@@ -21,7 +21,7 @@ Questions:
 - Do classes get assigned a period? or periods assigned a class? What should the UI list use to keep track of rendering?
 - How can i store stuff in memory (ex. in a singleton class or an instance or smth) and not have to retrieve from file on re-render?
 - For a different schedule, should I have a different instance of the state class (and a different widget?) or should it be treated as the same widget, with a data update. 
-- Add free period?
+- Add free period / no classes scheduled currently for a period.
 - Special days? Dept PD
 - See questions on the diagram doc? Or other implementation doc? 
 
@@ -41,6 +41,7 @@ Questions:
 - Add progress bar to currently occuring period. 
 - Add iPhone widgets / apple watch compatability
 - What happens in between periods?
+- Add support for merging periods by saying PE / LAB
 
 Settings page:
 - dark mode selector
