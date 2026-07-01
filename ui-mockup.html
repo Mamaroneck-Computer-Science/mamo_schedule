@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClassDay — Compact (whole day, no scroll)</title>
+<style>
+  /* ============================================================
+     ClassDay — COMPACT FORK
+     Whole day fits on one screen, no scrolling.
+     The "in session" class is a compact active row with an
+     inline live countdown instead of a large hero card.
+     ============================================================ */
+
+  :root {
+    --accent:#5b5bf0; --accent-2:#8a6cf6; --accent-soft:#ececfe;
+    --bg:#f4f5f9; --surface:#ffffff; --surface-2:#fbfbfe;
+    --text:#14161f; --text-2:#5c6072; --text-3:#9aa0b4; --border:#e9eaf2;
+    --shadow:0 1px 2px rgba(20,22,31,.04), 0 8px 24px rgba(20,22,31,.06);
+    --shadow-lg:0 2px 4px rgba(20,22,31,.05), 0 18px 48px rgba(20,22,31,.12);
+    --radius:22px; --radius-sm:14px;
+    --c-bio:#22b07d; --c-chem:#3b82f6; --c-hist:#f59e0b; --c-span:#a855f7; --c-gym:#ef4444;
+    --c-alg:#14b8a6; --c-eng:#f43f5e;
+  }
+  [data-theme="dark"] {
+    --accent:#7c7cff; --accent-2:#a98bff; --accent-soft:#23233a;
+    --bg:#0c0d12; --surface:#16181f; --surface-2:#1c1e27;
+    --text:#f3f4f8; --text-2:#a7adc0; --text-3:#6b7185; --border:#262936;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
+    --shadow-lg:0 2px 4px rgba(0,0,0,.35), 0 18px 48px rgba(0,0,0,.55);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+    background: radial-gradient(1200px 700px at 80% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%), var(--bg);
+    color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100%;
+    padding: 48px 24px 80px; transition: background .35s ease, color .35s ease;
+  }
+
+  .page-head { max-width: 920px; margin: 0 auto 36px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo { width: 44px; height: 44px; border-radius: 13px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 20px; box-shadow: var(--shadow); }
+  .brand h1 { font-size: 22px; letter-spacing: -.02em; }
+  .brand p { color: var(--text-2); font-size: 13.5px; margin-top: 2px; }
+  .theme-toggle { display: inline-flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); padding: 9px 14px; border-radius: 999px; cursor: pointer; color: var(--text); font-size: 13.5px; font-weight: 600; box-shadow: var(--shadow); transition: transform .15s; }
+  .theme-toggle:active { transform: scale(.96); }
+  .theme-toggle .dot { width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+
+  .stage { max-width: 920px; margin: 0 auto; display: flex; gap: 56px; justify-content: center; flex-wrap: wrap; }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .phone-label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+
+  .phone { width: 390px; height: 800px; background: var(--surface); border-radius: 46px; padding: 12px; box-shadow: var(--shadow-lg); position: relative; border: 1px solid var(--border); transition: background .35s ease, border-color .35s ease; }
+  .screen { position: relative; width: 100%; height: 100%; background: var(--bg); border-radius: 35px; overflow: hidden; display: flex; flex-direction: column; transition: background .35s ease; }
+  .notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 130px; height: 30px; background: var(--surface); border-radius: 0 0 18px 18px; z-index: 30; }
+
+  .statusbar { padding: 14px 26px 4px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: var(--text); z-index: 5; }
+  .statusbar .icons { display: flex; gap: 6px; align-items: center; opacity: .9; }
+
+  /* Today body — NO SCROLL, fits one screen */
+  .body-pad { flex: 1; padding: 8px 18px 100px; display: flex; flex-direction: column; overflow: hidden; }
+  /* Add-class screen keeps a scroll fallback */
+  .scroll { flex: 1; overflow-y: auto; padding: 8px 20px 110px; }
+  .scroll::-webkit-scrollbar { width: 0; }
+
+  .today-top { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 12px; }
+  .today-top .date-sm { font-size: 12.5px; font-weight: 700; color: var(--accent); letter-spacing: .04em; text-transform: uppercase; }
+  .today-top h2 { font-size: 24px; letter-spacing: -.03em; margin-top: 2px; }
+  .header-actions { display: flex; gap: 8px; }
+  .icon-btn { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; cursor: pointer; color: var(--text-2); box-shadow: var(--shadow); transition: transform .15s; }
+  .icon-btn:active { transform: scale(.93); }
+
+  /* tiny day summary chip */
+  .day-meta { display: flex; gap: 14px; padding: 0 6px 12px; font-size: 12.5px; color: var(--text-2); font-weight: 600; }
+  .day-meta b { color: var(--text); }
+
+  .sec-title { font-size: 12px; font-weight: 700; color: var(--text-3); letter-spacing: .06em; text-transform: uppercase; margin: 2px 6px 10px; }
+
+  /* ---- Full-day list (compact) ---- */
+  .clist { display: flex; flex-direction: column; gap: 7px; }
+  .crow { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 13px; padding: 10px 13px; box-shadow: var(--shadow); cursor: pointer; transition: transform .12s ease; }
+  .crow:active { transform: scale(.985); }
+  .crow .pnum { width: 30px; height: 30px; border-radius: 9px; flex: none; display: grid; place-items: center; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; background: color-mix(in srgb, var(--rowc, var(--accent)) 14%, transparent); color: var(--rowc, var(--accent)); }
+  .crow .body { flex: 1; min-width: 0; }
+  .crow .body .row1 { display: flex; align-items: baseline; gap: 8px; }
+  .crow .body .name { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  .crow .body .room { font-size: 12.5px; color: var(--text-3); white-space: nowrap; }
+  .crow .t { font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-2); white-space: nowrap; }
+
+  /* past classes — completed: dimmed, struck-through, muted badge */
+  .crow.past { opacity: .65; padding: 8px 13px; box-shadow: none; background: var(--surface-2); }
+  .crow.past .pnum { background: color-mix(in srgb, var(--text-3) 16%, transparent); color: var(--text-3); }
+  .crow.past .name { text-decoration: line-through; text-decoration-thickness: 1.5px; color: var(--text-2); }
+  .crow.past .room, .crow.past .t { color: var(--text-3); }
+
+  /* break rows (lunch / free) */
+  .crow.break { background: transparent; box-shadow: none; border-style: dashed; cursor: default; padding: 8px 13px; }
+  .crow.break .pnum { background: transparent; color: var(--text-3); font-size: 15px; }
+  .crow.break .name { color: var(--text-2); font-weight: 600; }
+
+  /* ---- ACTIVE (in session) row: compact, gradient, inline countdown ---- */
+  .crow.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent; color: #fff; padding: 12px 14px;
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 38%, transparent);
+  }
+  .crow.active .pnum { background: rgba(255,255,255,.22); color: #fff; }
+  .crow.active .name { font-size: 16px; }
+  .crow.active .room { color: rgba(255,255,255,.85); }
+  .crow.active .live { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; opacity: .95; margin-bottom: 3px; }
+  .crow.active .live .pulse { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,255,255,.6);} 70%{box-shadow:0 0 0 7px rgba(255,255,255,0);} 100%{box-shadow:0 0 0 0 rgba(255,255,255,0);} }
+  .crow.active .bar { margin-top: 8px; height: 5px; border-radius: 999px; background: rgba(255,255,255,.3); overflow: hidden; }
+  .crow.active .bar > i { display: block; height: 100%; background: #fff; border-radius: 999px; transition: width 1s linear; }
+  .crow.active .cd { text-align: right; flex: none; }
+  .crow.active .cd .cdt { font-size: 24px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .crow.active .cd .cdl { font-size: 10.5px; font-weight: 600; opacity: .9; margin-top: 3px; }
+
+  /* ---- "Now" divider between completed and current ---- */
+  .now-divider { display: flex; align-items: center; gap: 9px; margin: 3px 4px; }
+  .now-divider .ln { flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 45%, transparent)); }
+  .now-divider .ln.r { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 45%, transparent), transparent); }
+  .now-divider b { font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--accent); display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+  .now-divider b::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* ---- Bottom nav ---- */
+  .nav { position: absolute; left: 12px; right: 12px; bottom: 12px; height: 70px; background: color-mix(in srgb, var(--surface) 86%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid var(--border); border-radius: 24px; display: flex; align-items: center; justify-content: space-around; box-shadow: var(--shadow-lg); z-index: 20; }
+  .nav .item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-3); font-size: 11px; font-weight: 600; cursor: pointer; }
+  .nav .item.active { color: var(--accent); }
+  .nav .fab { width: 54px; height: 54px; border-radius: 17px; margin-top: -24px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; display: grid; place-items: center; box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 50%, transparent); cursor: pointer; transition: transform .15s; border: 4px solid var(--surface); }
+  .nav .fab:active { transform: scale(.92); }
+
+  /* ---- Profile dropdown (header) ---- */
+  .profile { position: relative; }
+  .profile-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); padding: 5px 11px 5px 5px; border-radius: 999px; cursor: pointer; color: var(--text); box-shadow: var(--shadow); transition: transform .15s; }
+  .profile-btn:active { transform: scale(.96); }
+  .profile-btn .avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+  .profile-btn .pname { font-size: 13px; font-weight: 700; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .profile-btn .chev { font-size: 10px; color: var(--text-3); }
+  .profile-menu { position: absolute; top: calc(100% + 8px); right: 0; width: 234px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-lg); padding: 7px; z-index: 40; opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity .15s ease, transform .15s ease, visibility .15s; }
+  .profile-menu.open { opacity: 1; visibility: visible; transform: none; }
+  .menu-label { font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); padding: 7px 9px 5px; }
+  .menu-item { display: flex; align-items: center; gap: 10px; padding: 9px; border-radius: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--text); transition: background .12s; }
+  .menu-item:hover { background: var(--surface-2); }
+  .menu-item.profile-row .mi-ava { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: #fff; flex: none; }
+  .menu-item.profile-row .mi-meta { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; flex: 1; }
+  .menu-item.profile-row .mi-meta b { font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .menu-item.profile-row .mi-meta small { font-size: 11px; color: var(--text-3); font-weight: 600; }
+  .menu-item.profile-row .mi-check { margin-left: auto; color: var(--accent); font-weight: 800; opacity: 0; }
+  .menu-item.profile-row[data-on="1"] .mi-check { opacity: 1; }
+  .menu-sep { height: 1px; background: var(--border); margin: 6px 4px; }
+
+  /* ---- Day-type badge (next to date) ---- */
+  .daytag { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .02em; text-transform: none; color: var(--accent); background: var(--accent-soft); vertical-align: middle; }
+
+  /* ---- Bottom day switcher (replaces tab bar) ---- */
+  .day-nav { justify-content: space-between; padding: 0 8px; gap: 6px; }
+  .day-arrow { width: 52px; height: 48px; border: none; background: transparent; border-radius: 16px; cursor: pointer; font-size: 28px; line-height: 1; color: var(--accent); display: grid; place-items: center; transition: background .12s, transform .12s; }
+  .day-arrow:hover { background: var(--surface-2); }
+  .day-arrow:active { transform: scale(.9); }
+  .day-arrow:disabled { color: var(--text-3); opacity: .3; cursor: default; background: transparent; }
+  .day-center { flex: 1; background: transparent; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--text); font-family: inherit; border-radius: 14px; padding: 6px; transition: background .12s; }
+  .day-center:hover { background: var(--surface-2); }
+  .day-center .dc-week { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+  .day-center .dc-date { font-size: 11.5px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .day-center.is-today .dc-week::after { content: "TODAY"; margin-left: 7px; font-size: 9px; font-weight: 800; letter-spacing: .06em; color: var(--accent); background: var(--accent-soft); padding: 2px 6px; border-radius: 999px; vertical-align: middle; }
+
+  /* ---- Add / Edit (same as main) ---- */
+  .form-top { display: flex; align-items: center; gap: 12px; padding: 10px 4px 20px; }
+  .form-top h2 { font-size: 22px; letter-spacing: -.02em; flex: 1; }
+  .field { margin-bottom: 18px; }
+  .field > label { display: block; font-size: 12.5px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; margin: 0 2px 8px; }
+  .input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 15px 16px; font-size: 16px; color: var(--text); font-family: inherit; font-weight: 500; box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s; }
+  .input::placeholder { color: var(--text-3); }
+  .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+  .swatches { display: flex; gap: 12px; }
+  .sw { width: 38px; height: 38px; border-radius: 12px; cursor: pointer; position: relative; box-shadow: var(--shadow); transition: transform .12s; }
+  .sw:active { transform: scale(.9); }
+  .sw[data-on="1"]::after { content:"✓"; position:absolute; inset:0; display:grid; place-items:center; color:#fff; font-weight:800; font-size:16px; }
+  .sw[data-on="1"] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px currentColor; }
+  .time-row { display: flex; gap: 12px; }
+  .time-row .field { flex: 1; margin-bottom: 0; }
+  .periods { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .per { text-align: center; padding: 9px 0 8px; border-radius: 12px; cursor: pointer; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); transition: transform .1s; color: var(--text-2); }
+  .per:active { transform: scale(.94); }
+  .per .n { font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+  .per .tm { display: block; font-size: 10.5px; font-weight: 600; opacity: .7; margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .per[data-on="1"] { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
+  .per[data-on="1"] .tm { opacity: .92; }
+  .hint { font-size: 12.5px; color: var(--text-3); margin: 10px 2px 0; line-height: 1.5; display: flex; gap: 6px; align-items: flex-start; }
+  .save-btn { width: 100%; margin-top: 26px; padding: 17px; border: none; cursor: pointer; border-radius: var(--radius-sm); color: #fff; font-size: 16px; font-weight: 700; font-family: inherit; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 45%, transparent); transition: transform .14s; }
+  .save-btn:active { transform: scale(.98); }
+
+  .footnote { max-width: 920px; margin: 40px auto 0; text-align: center; color: var(--text-3); font-size: 13px; line-height: 1.6; }
+  @media (max-width: 880px) { body { padding: 28px 14px 60px; } .stage { gap: 36px; } }
+</style>
+</head>
+<body data-theme="light">
+
+  <header class="page-head">
+    <div class="brand">
+      <div class="logo">C</div>
+      <div>
+        <h1>ClassDay <span style="font-size:13px;font-weight:600;color:var(--text-3)">· compact</span></h1>
+        <p>Whole day on one screen — no scrolling</p>
+      </div>
+    </div>
+    <button class="theme-toggle" id="themeToggle">
+      <span class="dot"></span>
+      <span id="themeLabel">Dark mode</span>
+    </button>
+  </header>
+
+  <div class="stage">
+
+    <!-- ============ TODAY VIEW (compact, no scroll) ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen">
+          <div class="statusbar">
+            <span id="clock1">10:03</span>
+            <span class="icons">􀙇 􀺄 􀛨</span>
+          </div>
+          <div class="body-pad">
+            <div class="today-top">
+              <div>
+                <div class="date-sm"><span id="dateSm">Tuesday · May 30</span><span class="daytag" id="dayTag">Day 2</span></div>
+                <h2 id="dayHeading">Today</h2>
+              </div>
+              <div class="profile">
+                <button class="profile-btn" id="profileBtn">
+                  <span class="avatar" id="profAvatar">M</span>
+                  <span class="pname" id="profName">Maya</span>
+                  <span class="chev">▾</span>
+                </button>
+                <div class="profile-menu" id="profileMenu">
+                  <div class="menu-label">Switch profile</div>
+                  <div id="profileList"></div>
+                  <div class="menu-sep"></div>
+                  <div class="menu-item" data-act="manage"><span>📚</span> Manage schedules &amp; classes</div>
+                  <div class="menu-item" data-act="settings"><span>⚙️</span> Settings</div>
+                </div>
+              </div>
+            </div>
+            <div class="day-meta">
+              <span id="classCount"><b>7</b> classes</span>
+              <span>Ends <b id="dayEnd">3:10</b></span>
+              <span id="leftCount"><b>4</b> left</span>
+            </div>
+            <div class="sec-title">Today's schedule</div>
+            <div class="clist" id="dayList"></div>
+          </div>
+
+          <nav class="nav day-nav">
+            <button class="day-arrow" id="prevDay" aria-label="Previous day">‹</button>
+            <button class="day-center" id="dayCenter">
+              <span class="dc-week" id="dcWeek">Tuesday</span>
+              <span class="dc-date" id="dcDate">May 30 · Day 2</span>
+            </button>
+            <button class="day-arrow" id="nextDay" aria-label="Next day">›</button>
+          </nav>
+        </div>
+      </div>
+      <div class="phone-label">Today — switch profile (top) · switch day (bottom)</div>
+    </div>
+
+    <!-- ============ ADD / EDIT CLASS ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen">
+          <div class="statusbar">
+            <span id="clock2">10:03</span>
+            <span class="icons">􀙇 􀺄 􀛨</span>
+          </div>
+          <div class="scroll">
+            <div class="form-top">
+              <div class="icon-btn">‹</div>
+              <h2>Add class</h2>
+              <div class="icon-btn">✕</div>
+            </div>
+
+            <div class="field">
+              <label>Class name</label>
+              <input class="input" value="Chemistry" />
+            </div>
+
+            <div class="field">
+              <label>Color</label>
+              <div class="swatches" id="swatches">
+                <div class="sw" style="background:var(--c-bio); color:var(--c-bio)"></div>
+                <div class="sw" style="background:var(--c-chem); color:var(--c-chem)" data-on="1"></div>
+                <div class="sw" style="background:var(--c-hist); color:var(--c-hist)"></div>
+                <div class="sw" style="background:var(--c-span); color:var(--c-span)"></div>
+                <div class="sw" style="background:var(--c-gym); color:var(--c-gym)"></div>
+              </div>
+            </div>
+
+            <div class="time-row" style="margin-bottom:18px">
+              <div class="field">
+                <label>Room</label>
+                <input class="input" value="118" />
+              </div>
+              <div class="field">
+                <label>Teacher</label>
+                <input class="input" value="Mr. Doyle" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Period</label>
+              <div class="periods" id="periods"></div>
+              <div class="hint">🕒 <span>Start &amp; end times come from your school's bell schedule — just pick the period.</span></div>
+            </div>
+
+            <button class="save-btn">Save class</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Add / edit class</div>
+    </div>
+
+  </div>
+
+  <p class="footnote">
+    Compact fork · the entire day fits without scrolling. Use the <strong>profile dropdown</strong> (top right) to switch user/schedule, and the <strong>‹ / ›</strong> bar at the bottom to move between days — the day-type badge (Day 1 / Day 2) reflects the block schedule. Settings &amp; class editing live in the profile dropdown.<br/>
+    Tap <strong>Dark mode</strong> to preview both themes.
+  </p>
+
+<script>
+  /* ---- Theme toggle ---- */
+  const body = document.body;
+  const tBtn = document.getElementById('themeToggle');
+  const tLbl = document.getElementById('themeLabel');
+  tBtn.addEventListener('click', () => {
+    const dark = body.getAttribute('data-theme') === 'dark';
+    body.setAttribute('data-theme', dark ? 'light' : 'dark');
+    tLbl.textContent = dark ? 'Dark mode' : 'Light mode';
+  });
+
+  /* ---- Bell schedule (source of truth for every period's time) ---- */
+  function m(h, min) { return h * 60 + min; }
+  function fmt(t) { let h = Math.floor(t/60), mm = Math.round(t%60); let hh = h%12; if (hh===0) hh=12; return `${hh}:${String(mm).padStart(2,'0')}`; }
+  const BELL = {
+    1:{start:m(7,55),end:m(8,45)}, 2:{start:m(8,50),end:m(9,40)},
+    3:{start:m(9,45),end:m(10,35)}, 4:{start:m(10,40),end:m(11,30)},
+    5:{start:m(11,35),end:m(12,25)}, 6:{start:m(12,30),end:m(13,20)},
+    7:{start:m(13,25),end:m(14,15)}, 8:{start:m(14,20),end:m(15,10)},
+  };
+  const NOW_PERIOD = 3; // the live period on the real "today"
+
+  /* ---- Reusable block-schedule day templates (Day 1 / Day 2) ---- */
+  const lunch = { type: 'break', name: 'Lunch', icon: '🍴', at: BELL[4].end };
+  const MAYA_D1 = [
+    { period: 1, name: 'Algebra II', room: '301', c: 'var(--c-alg)'  },
+    { period: 2, name: 'English',    room: '215', c: 'var(--c-eng)'  },
+    { period: 3, name: 'Biology',    room: '204', c: 'var(--c-bio)'  },
+    lunch,
+    { period: 5, name: 'Art',        room: '140', c: 'var(--c-span)' },
+    { period: 6, name: 'Physics',    room: '220', c: 'var(--c-chem)' },
+  ];
+  const MAYA_D2 = [
+    { period: 1, name: 'Algebra II', room: '301', c: 'var(--c-alg)'  },
+    { period: 2, name: 'English',    room: '215', c: 'var(--c-eng)'  },
+    { period: 3, name: 'Biology',    room: '204', c: 'var(--c-bio)'  },
+    { period: 4, name: 'Chemistry',  room: '118', c: 'var(--c-chem)' },
+    lunch,
+    { period: 5, name: 'History',    room: '230', c: 'var(--c-hist)' },
+    { period: 6, name: 'Spanish',    room: '112', c: 'var(--c-span)' },
+    { period: 8, name: 'Gym',        room: 'Field House', c: 'var(--c-gym)' },
+  ];
+  const JORDAN_D1 = [
+    { period: 1, name: 'Calculus',   room: '305', c: 'var(--c-alg)'  },
+    { period: 2, name: 'French',     room: '210', c: 'var(--c-eng)'  },
+    { period: 3, name: 'Physics',    room: '220', c: 'var(--c-chem)' },
+    lunch,
+    { period: 5, name: 'Economics',  room: '145', c: 'var(--c-hist)' },
+    { period: 6, name: 'Comp Sci',   room: '118', c: 'var(--c-bio)'  },
+  ];
+  const JORDAN_D2 = [
+    { period: 1, name: 'Calculus',   room: '305', c: 'var(--c-alg)'  },
+    { period: 2, name: 'French',     room: '210', c: 'var(--c-eng)'  },
+    { period: 3, name: 'Physics',    room: '220', c: 'var(--c-chem)' },
+    { period: 4, name: 'Literature', room: '215', c: 'var(--c-span)' },
+    lunch,
+    { period: 6, name: 'Band',       room: 'Music Rm', c: 'var(--c-hist)' },
+    { period: 7, name: 'Chemistry',  room: '118', c: 'var(--c-bio)'  },
+  ];
+
+  /* ---- Profiles (each a user with their own schedule of days) ---- */
+  const PROFILES = {
+    maya: {
+      name: 'Maya Chen', short: 'Maya', sub: 'Grade 11', avatar: 'M', today: 1,
+      days: [
+        { weekday: 'Monday',    date: 'May 29', dayType: 1, list: MAYA_D1 },
+        { weekday: 'Tuesday',   date: 'May 30', dayType: 2, list: MAYA_D2 },
+        { weekday: 'Wednesday', date: 'May 31', dayType: 1, list: MAYA_D1 },
+        { weekday: 'Thursday',  date: 'Jun 1',  dayType: 2, list: MAYA_D2 },
+        { weekday: 'Friday',    date: 'Jun 2',  dayType: 1, list: MAYA_D1 },
+      ],
+    },
+    jordan: {
+      name: 'Jordan Ellis', short: 'Jordan', sub: 'Grade 12', avatar: 'J', today: 1,
+      days: [
+        { weekday: 'Monday',    date: 'May 29', dayType: 1, list: JORDAN_D1 },
+        { weekday: 'Tuesday',   date: 'May 30', dayType: 2, list: JORDAN_D2 },
+        { weekday: 'Wednesday', date: 'May 31', dayType: 1, list: JORDAN_D1 },
+        { weekday: 'Thursday',  date: 'Jun 1',  dayType: 2, list: JORDAN_D2 },
+        { weekday: 'Friday',    date: 'Jun 2',  dayType: 1, list: JORDAN_D1 },
+      ],
+    },
+  };
+
+  /* ---- View state ---- */
+  const state = { profile: 'maya', dayIndex: PROFILES['maya'].today };
+
+  /* ---- Build profile dropdown list ---- */
+  const profileBtn  = document.getElementById('profileBtn');
+  const profileMenu = document.getElementById('profileMenu');
+  function renderProfileList() {
+    document.getElementById('profileList').innerHTML = Object.keys(PROFILES).map(key => {
+      const p = PROFILES[key];
+      return `<div class="menu-item profile-row" data-profile="${key}" ${key === state.profile ? 'data-on="1"' : ''}>
+        <span class="mi-ava" style="background:linear-gradient(135deg,var(--accent),var(--accent-2))">${p.avatar}</span>
+        <span class="mi-meta"><b>${p.name}</b><small>${p.sub}</small></span>
+        <span class="mi-check">✓</span>
+      </div>`;
+    }).join('');
+  }
+
+  /* ---- Render the currently selected profile + day ---- */
+  function renderDay() {
+    const prof = PROFILES[state.profile];
+    const day  = prof.days[state.dayIndex];
+    const rel  = state.dayIndex - prof.today;        // <0 past day, 0 today, >0 future day
+    const isToday = rel === 0;
+
+    // Header (date + day-type badge + heading)
+    document.getElementById('dateSm').textContent = `${day.weekday} · ${day.date}`;
+    document.getElementById('dayTag').textContent = `Day ${day.dayType}`;
+    document.getElementById('dayHeading').textContent =
+      isToday ? 'Today' : rel === -1 ? 'Yesterday' : rel === 1 ? 'Tomorrow' : day.weekday;
+
+    // Profile button
+    document.getElementById('profAvatar').textContent = prof.avatar;
+    document.getElementById('profName').textContent   = prof.short;
+
+    // Bottom day-switcher label
+    document.getElementById('dcWeek').textContent = day.weekday;
+    document.getElementById('dcDate').textContent = `${day.date} · Day ${day.dayType}`;
+    document.getElementById('dayCenter').classList.toggle('is-today', isToday);
+    document.getElementById('prevDay').disabled = state.dayIndex === 0;
+    document.getElementById('nextDay').disabled = state.dayIndex === prof.days.length - 1;
+
+    // Day summary
+    const classes = day.list.filter(x => x.period);
+    const lastEnd = Math.max(...classes.map(x => BELL[x.period].end));
+    document.getElementById('classCount').innerHTML = `<b>${classes.length}</b> classes`;
+    document.getElementById('dayEnd').textContent   = fmt(lastEnd);
+    const left = isToday ? classes.filter(x => x.period >= NOW_PERIOD).length
+                         : rel > 0 ? classes.length : 0;
+    document.getElementById('leftCount').innerHTML = `<b>${left}</b> left`;
+
+    // Schedule list
+    document.getElementById('dayList').innerHTML = day.list.map(x => {
+      if (x.type === 'break') {
+        return `<div class="crow break">
+          <div class="pnum">${x.icon}</div>
+          <div class="body"><div class="row1"><span class="name">${x.name}</span></div></div>
+          <div class="t">${fmt(x.at)}</div>
+        </div>`;
+      }
+      const isNow  = isToday && x.period === NOW_PERIOD;
+      const isPast = rel < 0 || (isToday && x.period < NOW_PERIOD);
+      if (isNow) {
+        return `<div class="now-divider"><span class="ln"></span><b id="nowDivTime">Now</b><span class="ln r"></span></div>
+        <div class="crow active" style="--rowc:${x.c}">
+          <div class="pnum">${x.period}</div>
+          <div class="body">
+            <span class="live"><span class="pulse"></span> Now · Period ${x.period}</span>
+            <div class="row1"><span class="name">${x.name}</span><span class="room">Room ${x.room}</span></div>
+            <div class="bar"><i id="cdBar" style="width:36%"></i></div>
+          </div>
+          <div class="cd"><div class="cdt" id="cdTime">32:00</div><div class="cdl">left</div></div>
+        </div>`;
+      }
+      return `<div class="crow ${isPast ? 'past' : ''}" style="--rowc:${x.c}">
+        <div class="pnum">${x.period}</div>
+        <div class="body"><div class="row1"><span class="name">${x.name}</span><span class="room">${x.room}</span></div></div>
+        <div class="t">${fmt(BELL[x.period].start)}–${fmt(BELL[x.period].end)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ---- Profile dropdown interactions ---- */
+  profileBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    profileMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!profileMenu.contains(e.target) && !profileBtn.contains(e.target)) profileMenu.classList.remove('open');
+  });
+  profileMenu.addEventListener('click', e => {
+    const row = e.target.closest('.profile-row');
+    if (row) {
+      state.profile  = row.dataset.profile;
+      state.dayIndex = PROFILES[state.profile].today;
+      renderProfileList();
+      renderDay();
+      profileMenu.classList.remove('open');
+      return;
+    }
+    const act = e.target.closest('[data-act]');
+    if (act) profileMenu.classList.remove('open'); // Settings / Manage — opens editor in the full app
+  });
+
+  /* ---- Bottom day-switcher interactions ---- */
+  document.getElementById('prevDay').addEventListener('click', () => {
+    if (state.dayIndex > 0) { state.dayIndex--; renderDay(); }
+  });
+  document.getElementById('nextDay').addEventListener('click', () => {
+    const max = PROFILES[state.profile].days.length - 1;
+    if (state.dayIndex < max) { state.dayIndex++; renderDay(); }
+  });
+  document.getElementById('dayCenter').addEventListener('click', () => {
+    state.dayIndex = PROFILES[state.profile].today; renderDay();
+  });
+
+  renderProfileList();
+  renderDay();
+
+  /* ---- Period picker (Add-class form) ---- */
+  document.getElementById('periods').innerHTML = [1,2,3,4,5,6,7,8].map(p => `
+    <div class="per" data-period="${p}" ${p === 4 ? 'data-on="1"' : ''}>
+      <span class="n">${p}</span><span class="tm">${fmt(BELL[p].start)}</span>
+    </div>`).join('');
+  document.getElementById('periods').addEventListener('click', e => {
+    const per = e.target.closest('.per'); if (!per) return;
+    document.querySelectorAll('#periods .per').forEach(s => s.removeAttribute('data-on'));
+    per.setAttribute('data-on', '1');
+  });
+  document.getElementById('swatches').addEventListener('click', e => {
+    const sw = e.target.closest('.sw'); if (!sw) return;
+    document.querySelectorAll('#swatches .sw').forEach(s => s.removeAttribute('data-on'));
+    sw.setAttribute('data-on', '1');
+  });
+
+  /* ---- Live countdown for the active row (only runs while viewing "today") ---- */
+  const bell = BELL[NOW_PERIOD];
+  const durationSec = (bell.end - bell.start) * 60;
+  let elapsedSec = 18 * 60;
+  const clock1 = document.getElementById('clock1');
+  const clock2 = document.getElementById('clock2');
+  function tick() {
+    const remaining = Math.max(0, durationSec - elapsedSec);
+    const nowMin = bell.start + elapsedSec/60;
+    clock1.textContent = fmt(nowMin); clock2.textContent = fmt(nowMin);
+
+    // Active-row elements only exist when the user is looking at the real "today"
+    const cdTime = document.getElementById('cdTime');
+    const cdBar  = document.getElementById('cdBar');
+    const nowDivTime = document.getElementById('nowDivTime');
+    if (cdTime) cdTime.textContent = `${Math.floor(remaining/60)}:${String(Math.floor(remaining%60)).padStart(2,'0')}`;
+    if (cdBar)  cdBar.style.width = Math.min(100, (elapsedSec/durationSec)*100) + '%';
+    if (nowDivTime) nowDivTime.textContent = 'Now · ' + fmt(nowMin);
+
+    elapsedSec += 1;
+    if (elapsedSec > durationSec) elapsedSec = 18 * 60;
+  }
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
