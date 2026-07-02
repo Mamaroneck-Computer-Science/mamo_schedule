@@ -25,7 +25,7 @@ Future<String> getDayType(String school, DateTime date) async {
 }
 
 Future<void> _saveCalendar() async {
-  final config = getCalendarConfig();
+  final config = await getCalendarConfig();
   String calJsonStr =
       await getCalendarJson(config['link'] ?? '', config['regex'] ?? '');
   await writeCalendar(calJsonStr);

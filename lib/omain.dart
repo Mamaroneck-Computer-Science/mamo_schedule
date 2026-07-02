@@ -5,12 +5,13 @@ import 'ui/clock_page.dart';
 import 'ui/counter_page.dart';
 import 'ui/cal_page.dart';
 import 'data/schedule_model.dart';
+import 'package:clock/clock.dart';
 
 void main() {
   ScheduleModel sched = ScheduleModel();
-  sched.setSchedule(DateTime.now(), 'testName');
+  sched.setSchedule(clock.now(), 'testName');
   print(sched.futurePeriods);
-  print(DateTime.now());
+  print(clock.now());
   runApp(const MyApp());
 }
 

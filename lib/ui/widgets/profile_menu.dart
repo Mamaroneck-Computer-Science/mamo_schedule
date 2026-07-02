@@ -1,24 +1,62 @@
 import 'package:flutter/material.dart';
 
+import '../../data/preferences.dart';
 import '../theme.dart';
 
 enum ProfileAction { manage, settings }
 
-/// Header pill showing the active profile with a dropdown. Profile switching
-/// itself is owned by the model (single profile for now), so this surfaces the
-/// current profile plus the Manage / Settings actions from the mockup.
-class ProfileMenu extends StatelessWidget {
+sealed class _MenuEntry {
+  const _MenuEntry();
+}
+
+class _SwitchTo extends _MenuEntry {
+  final String profileName;
+  const _SwitchTo(this.profileName);
+}
+
+class _DoAction extends _MenuEntry {
+  final ProfileAction action;
+  const _DoAction(this.action);
+}
+
+/// Header pill showing the active profile with a dropdown. Mirrors the
+/// mockup's profile-menu: a "Switch profile" list of every saved schedule
+/// (each row clickable, checkmark on the active one), then the Manage /
+/// Settings actions.
+class ProfileMenu extends StatefulWidget {
   final String profileName;
   final ValueChanged<ProfileAction> onAction;
+  final ValueChanged<String> onSelectProfile;
 
   const ProfileMenu({
     super.key,
     required this.profileName,
     required this.onAction,
+    required this.onSelectProfile,
   });
 
-  String get _initial =>
-      profileName.isEmpty ? '?' : profileName.characters.first.toUpperCase();
+  @override
+  State<ProfileMenu> createState() => _ProfileMenuState();
+}
+
+class _ProfileMenuState extends State<ProfileMenu> {
+  List<ScheduleSummary> _profiles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfiles();
+  }
+
+  Future<void> _loadProfiles() async {
+    final summaries = await getScheduleSummaries();
+    if (!mounted) return;
+    setState(() => _profiles = summaries);
+  }
+
+  String get _initial => widget.profileName.isEmpty
+      ? '?'
+      : widget.profileName.characters.first.toUpperCase();
 
   @override
   Widget build(BuildContext context) {
@@ -30,11 +68,15 @@ class ProfileMenu extends StatelessWidget {
         // splashColor: Colors.green,
         // highlightColor: Colors.green,
       ),
-      child: PopupMenuButton<ProfileAction>(
+      child: PopupMenuButton<_MenuEntry>(
         borderRadius: BorderRadius.circular(999),
         padding: EdgeInsets.zero,
         splashRadius: 999,
-        onSelected: onAction,
+        onOpened: _loadProfiles,
+        onSelected: (entry) => switch (entry) {
+          _SwitchTo(:final profileName) => widget.onSelectProfile(profileName),
+          _DoAction(:final action) => widget.onAction(action),
+        },
         tooltip: 'Profile',
         offset: const Offset(0, 48),
         color: c.surface,
@@ -45,27 +87,70 @@ class ProfileMenu extends StatelessWidget {
         itemBuilder: (context) => [
           PopupMenuItem(
             enabled: false,
-            child: Row(
-              children: [
-                _Avatar(initial: _initial, size: 30),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    profileName.isEmpty ? 'No profile' : profileName,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: c.text,
-                    ),
-                  ),
-                ),
-              ],
+            height: 28,
+            child: Text(
+              'SWITCH PROFILE',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7,
+                color: c.text3,
+              ),
             ),
           ),
+          if (_profiles.isEmpty)
+            PopupMenuItem(
+              enabled: false,
+              child: Text('No schedules yet',
+                  style: TextStyle(color: c.text3, fontWeight: FontWeight.w600)),
+            )
+          else
+            for (final s in _profiles)
+              PopupMenuItem<_MenuEntry>(
+                value: _SwitchTo(s.profileName),
+                child: Row(
+                  children: [
+                    _Avatar(
+                      initial: s.profileName.isEmpty
+                          ? '?'
+                          : s.profileName.characters.first.toUpperCase(),
+                      size: 30,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            s.profileName,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: c.text,
+                            ),
+                          ),
+                          Text(
+                            s.school,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: c.text3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (s.profileName == widget.profileName)
+                      Icon(Icons.check, size: 16, color: c.accent),
+                  ],
+                ),
+              ),
           const PopupMenuDivider(),
           PopupMenuItem(
-            value: ProfileAction.manage,
+            value: const _DoAction(ProfileAction.manage),
             child: Row(
               children: [
                 const Text('📚'),
@@ -77,7 +162,7 @@ class ProfileMenu extends StatelessWidget {
             ),
           ),
           PopupMenuItem(
-            value: ProfileAction.settings,
+            value: const _DoAction(ProfileAction.settings),
             child: Row(
               children: [
                 const Text('⚙️'),
@@ -104,7 +189,7 @@ class ProfileMenu extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 80),
                 child: Text(
-                  profileName.isEmpty ? 'Profile' : profileName,
+                  widget.profileName.isEmpty ? 'Profile' : widget.profileName,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 13,

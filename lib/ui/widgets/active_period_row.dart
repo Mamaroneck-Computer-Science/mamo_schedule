@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:clock/clock.dart';
 
 import '../period_view.dart';
 import '../theme.dart';
 
 /// The "in session" row: a gradient card with a live MM:SS countdown and a
 /// progress bar. The countdown is derived entirely from the period's start
-/// time and duration vs [DateTime.now] — it owns a 1-second [Timer] and never
+/// time and duration vs [clock.now] — it owns a 1-second [Timer] and never
 /// mutates the model.
 class ActivePeriodRow extends StatefulWidget {
   final PeriodView view;
@@ -40,7 +41,7 @@ class _ActivePeriodRowState extends State<ActivePeriodRow> {
     final c = context.colors;
     final view = widget.view;
 
-    final now = DateTime.now();
+    final now = clock.now();
     final total = view.end.difference(view.start).inSeconds;
     final elapsed = now.difference(view.start).inSeconds.clamp(0, total);
     final remaining = (total - elapsed).clamp(0, total);
@@ -224,7 +225,10 @@ class NowDivider extends StatelessWidget {
               height: 1,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.transparent, c.accent.withValues(alpha: 0.45)],
+                  colors: [
+                    Colors.transparent,
+                    c.accent.withValues(alpha: 0.45)
+                  ],
                 ),
               ),
             ),
@@ -260,7 +264,10 @@ class NowDivider extends StatelessWidget {
               height: 1,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [c.accent.withValues(alpha: 0.45), Colors.transparent],
+                  colors: [
+                    c.accent.withValues(alpha: 0.45),
+                    Colors.transparent
+                  ],
                 ),
               ),
             ),

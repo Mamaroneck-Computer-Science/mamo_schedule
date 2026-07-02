@@ -3,13 +3,14 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../data/schedule_model.dart';
-import 'add_class_screen.dart';
+import 'manage/schedules_list_screen.dart';
 import 'period_view.dart';
 import 'theme.dart';
 import 'widgets/active_period_row.dart';
 import 'widgets/day_switcher.dart';
 import 'widgets/period_row.dart';
 import 'widgets/profile_menu.dart';
+import 'package:clock/clock.dart';
 
 /// The primary "Today" screen — the whole day on one screen, driven entirely
 /// by [ScheduleModel].
@@ -20,7 +21,7 @@ class ScheduleScreen extends StatelessWidget {
 
   /// Whole-day offset of the viewed day relative to today.
   int _dayOffset(DateTime day) =>
-      _midnight(day).difference(_midnight(DateTime.now())).inDays;
+      _midnight(day).difference(_midnight(clock.now())).inDays;
 
   String _heading(int offset, DateTime day) {
     switch (offset) {
@@ -64,6 +65,7 @@ class ScheduleScreen extends StatelessWidget {
               onToggleTheme: theme.toggle,
               onAdd: () => _openManage(context),
               onProfileAction: (_) => _openManage(context),
+              onSelectProfile: (name) => model.switchProfile(name),
             ),
             _DayMeta(views: views, offset: offset),
             Expanded(
@@ -83,7 +85,7 @@ class ScheduleScreen extends StatelessWidget {
           isToday: isToday,
           onPrev: () => _shiftDay(context, model, -1),
           onNext: () => _shiftDay(context, model, 1),
-          onToday: () => model.setSchedule(DateTime.now(), null),
+          onToday: () => model.setSchedule(clock.now(), null),
         ),
       ),
       backgroundColor: c.bg,
@@ -96,7 +98,7 @@ class ScheduleScreen extends StatelessWidget {
 
   void _openManage(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AddClassScreen()),
+      MaterialPageRoute(builder: (_) => const SchedulesListScreen()),
     );
   }
 }
@@ -110,6 +112,7 @@ class _Header extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final VoidCallback onAdd;
   final ValueChanged<ProfileAction> onProfileAction;
+  final ValueChanged<String> onSelectProfile;
 
   const _Header({
     required this.dateLabel,
@@ -120,6 +123,7 @@ class _Header extends StatelessWidget {
     required this.onToggleTheme,
     required this.onAdd,
     required this.onProfileAction,
+    required this.onSelectProfile,
   });
 
   @override
@@ -167,7 +171,11 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
-          ProfileMenu(profileName: profileName, onAction: onProfileAction),
+          ProfileMenu(
+            profileName: profileName,
+            onAction: onProfileAction,
+            onSelectProfile: onSelectProfile,
+          ),
         ],
       ),
     );

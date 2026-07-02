@@ -4,9 +4,55 @@ import '../classes/class_period.dart';
 import 'package:flutter/material.dart';
 import '../utils/files.dart';
 
+const String kActiveProfileKey = '_activeProfile';
+
+class ScheduleSummary {
+  final String profileName;
+  final String school;
+  final int classCount;
+
+  const ScheduleSummary(this.profileName, this.school, this.classCount);
+}
+
 Future<List> getProfileNames() async {
   final preferences = await readPreferences();
-  return preferences.keys.toList();
+  return preferences.keys.where((k) => k != kActiveProfileKey).toList();
+}
+
+Future<String?> getActiveProfile() async {
+  final preferences = await readPreferences();
+  final active = preferences[kActiveProfileKey];
+  if (active is String && preferences.containsKey(active)) {
+    return active;
+  }
+  return null;
+}
+
+Future<void> setActiveProfile(String profileName) async {
+  Map preferences = await readPreferences();
+  preferences[kActiveProfileKey] = profileName;
+  await _savePreferences(preferences);
+}
+
+int _classCount(String profileName, Map preferences) {
+  final entry = preferences[profileName];
+  if (entry is Map && entry['classes'] is List) {
+    return (entry['classes'] as List).length;
+  }
+  return 0;
+}
+
+Future<List<ScheduleSummary>> getScheduleSummaries() async {
+  final preferences = await readPreferences();
+  final names = preferences.keys.where((k) => k != kActiveProfileKey);
+  return [
+    for (final name in names)
+      ScheduleSummary(
+        name,
+        _getSchool(name, preferences),
+        _classCount(name, preferences),
+      ),
+  ];
 }
 
 String _getSchool(String profileName, Map preferences) {
@@ -31,7 +77,7 @@ List<ClassPeriod> _getStudentSchedule(String profileName, Map preferences) {
   if (preferences.containsKey(profileName) &&
       preferences[profileName].containsKey('classes')) {
     for (var per in preferences[profileName]['classes']) {
-      schedule.add(ClassPeriod(per['period'], per['name'], per['room'],
+      schedule.add(ClassPeriod(per['period'], per['class_name'], per['room'],
           per['teacher'], stringToColor(per['color'])));
     }
   } else {

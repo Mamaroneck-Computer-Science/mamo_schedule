@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/calendar.dart';
+import 'package:clock/clock.dart';
 
 class CalPage extends StatefulWidget {
   @override
@@ -14,7 +15,7 @@ class _CalPageState extends State<CalPage> {
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
+      initialDate: _selectedDate ?? clock.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );

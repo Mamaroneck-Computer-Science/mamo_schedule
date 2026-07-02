@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:clock/clock.dart';
 
 class ClockPage extends StatefulWidget {
   @override
@@ -30,7 +31,7 @@ class _ClockPageState extends State<ClockPage> {
   }
 
   String _getTimeStr() {
-    DateTime d = DateTime.now();
+    DateTime d = clock.now();
     String out = "";
     out += (d.hour % 12).toString();
     out += ":";
