@@ -1,3 +1,4 @@
 {
-    "SCHEDULE_CONFIG_LINK" : "https://github.com/Mamaroneck-Computer-Science/mamo_schedule_config/config.json"
+    "ALT_SCHEDULE_CONFIG_LINK" : "https://github.com/Mamaroneck-Computer-Science/mamo_schedule_config/config.json",
+    "SCHEDULE_CONFIG_LINK" : "https://raw.githubusercontent.com/Mamaroneck-Computer-Science/mamo_schedule/refs/heads/POTENTIACHANGES/schedule_config.json"
 }
