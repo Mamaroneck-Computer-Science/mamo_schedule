@@ -24,6 +24,8 @@ Questions:
 - Add free period / no classes scheduled currently for a period.
 - Special days? Dept PD
 - See questions on the diagram doc? Or other implementation doc? 
+- Timers - what widgets have different timers? How do they perform?
+- What does current memory requirements / latency requirements look like for the app? 
 
 ## ToDo:
 - Toggle between schedules / users
@@ -42,6 +44,11 @@ Questions:
 - Add iPhone widgets / apple watch compatability
 - What happens in between periods?
 - Add support for merging periods by saying PE / LAB
+- Add an option to track the most recently opened / activated schedule. 
+- Add expiry functionality for config & calendar
+- Add regex to scheduleconfig thing.
+- Probably add something for exception days into config.
+- Migrate to singleton pattern for schedule config rather than reading from disk?
 
 Settings page:
 - dark mode selector
